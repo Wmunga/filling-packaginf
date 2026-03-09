@@ -44,14 +44,24 @@ useEffect(() => {
       <table>
         <thead><tr><th>Work Order</th><th>Line</th><th>Hourly Outputs</th></tr></thead>
         <tbody>
-          {data.map(wo => (
-            <tr key={wo.id}>
-              <td>{wo.order_number}</td>
-              <td>{wo.line_id}</td>
-              <td>{wo.hourly_productions.map(h => `Hour ${h.hour}: ${h.output} (${h.remarks})`).join(', ')}</td>
-            </tr>
-          ))}
-        </tbody>
+  {data.length === 0 ? (
+    <tr>
+      <td colSpan={3}>No work orders found yet. Add some as Captain!</td>
+    </tr>
+  ) : (
+    data.map(wo => (
+      <tr key={wo.id}>
+        <td>{wo.order_number}</td>
+        <td>{wo.line_id}</td>
+        <td>
+          {wo.hourly_productions?.length > 0
+            ? wo.hourly_productions.map(h => `Hour ${h.hour}: ${h.output} (${h.remarks || 'No remarks'})`).join(', ')
+            : 'No hourly data yet'}
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
       </table>
     </div>
   );

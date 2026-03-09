@@ -3,20 +3,40 @@ import { useState, useEffect } from 'react';
 function SupervisorDashboard({ supabase }) {
   const [data, setData] = useState([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data: workOrders } = await supabase.from('work_orders').select(`
-        id, order_number, line_id, 
-        hourly_productions (hour, output, remarks)
-      `);
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const { data: workOrders, error } = await supabase
+        .from('work_orders')
+        .select(`
+          id, order_number, line_id, 
+          hourly_productions (hour, output, remarks)
+        `);
+
+      console.log('Fetched workOrders:', workOrders);   // ← Add this
+      console.log('Fetch error:', error);               // ← Add this
+
+      if (error) {
+        console.error('Supabase error:', error);
+        alert('Data fetch failed: ' + error.message);
+      }
+
       setData(workOrders || []);
-    };
-    fetchData();  // Initial fetch
+    } catch (err) {
+      console.error('Unexpected error:', err);
+    }
+  };
 
-    const channel = supabase.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'hourly_productions' }, fetchData).subscribe();
+  fetchData();
 
-    return () => supabase.removeChannel(channel);
-  }, [supabase]);  // Include supabase in dependencies to fix the warning
+  // Keep the real-time subscription
+  const channel = supabase
+    .channel('db-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'hourly_productions' }, fetchData)
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
+}, [supabase]); // Include supabase in dependencies to fix the warning
 
   return (
     <div>

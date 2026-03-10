@@ -7,6 +7,12 @@ function Login({ supabase }) {
   const navigate = useNavigate();
 
   // Listen for auth state changes (recommended for reliable redirect)
+  supabase.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session) {
+    console.log('Logged-in user UUID:', session.user.id);
+    // rest of code...
+  }
+});
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {

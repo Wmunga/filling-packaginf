@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './Login';
 import CaptainInput from './CaptainInput';
 import SupervisorDashboard from './SupervisorDashboard';
-import React from 'react';
+import ErrorBoundary from './ErrorBoundary';  // ← ADD THIS LINE
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -15,12 +15,10 @@ function App() {
       <Routes>
         <Route path="/" element={<Login supabase={supabase} />} />
         <Route path="/captain" element={<CaptainInput supabase={supabase} />} />
-        <Route path="/supervisor" element={<SupervisorDashboard supabase={supabase} />} />
-        // In App.jsx, inside the /supervisor route
         <Route
           path="/supervisor"
           element={
-            <ErrorBoundary>
+            <ErrorBoundary>  {/* ← Wrap with ErrorBoundary */}
               <SupervisorDashboard supabase={supabase} />
             </ErrorBoundary>
           }

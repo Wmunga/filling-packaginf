@@ -11,16 +11,21 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('ErrorBoundary caught:', error, errorInfo);
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '20px', color: 'red' }}>
+        <div style={{ padding: '30px', color: 'red', textAlign: 'center' }}>
           <h2>Something went wrong in the dashboard.</h2>
           <p>{this.state.error?.message || 'Unknown error'}</p>
-          <button onClick={() => window.location.reload()}>Reload Page</button>
+          <button 
+            onClick={() => window.location.reload()} 
+            style={{ padding: '10px 20px', marginTop: '20px' }}
+          >
+            Reload Page
+          </button>
         </div>
       );
     }

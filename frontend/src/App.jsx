@@ -16,6 +16,15 @@ function App() {
         <Route path="/" element={<Login supabase={supabase} />} />
         <Route path="/captain" element={<CaptainInput supabase={supabase} />} />
         <Route path="/supervisor" element={<SupervisorDashboard supabase={supabase} />} />
+        // In App.jsx, inside the /supervisor route
+        <Route
+          path="/supervisor"
+          element={
+            <ErrorBoundary>
+              <SupervisorDashboard supabase={supabase} />
+            </ErrorBoundary>
+          }
+        />
       </Routes>
     </Router>
   );

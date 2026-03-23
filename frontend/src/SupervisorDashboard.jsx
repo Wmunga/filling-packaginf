@@ -1,44 +1,43 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
+// ... same imports ...
+
 function SupervisorDashboard({ supabase }) {
   const [data, setData] = useState([]);
   const isMounted = useRef(true);
+  const fetchTimeout = useRef(null);
 
-  // Memoized fetch function – used by both initial load and real-time
   const fetchData = useCallback(async () => {
     if (!isMounted.current) return;
 
-    try {
-      const { data: workOrders, error } = await supabase
-        .from('work_orders')
-        .select(`
-          id, order_number, line_id, 
-          hourly_productions (hour, output, remarks)
-        `);
+    // Debounce: only fetch if no recent call
+    if (fetchTimeout.current) clearTimeout(fetchTimeout.current);
 
-      console.log('Fetched workOrders:', workOrders);
-      console.log('Fetch error:', error);
+    fetchTimeout.current = setTimeout(async () => {
+      try {
+        const { data: workOrders, error } = await supabase
+          .from('work_orders')
+          .select(`
+            id, order_number, line_id, 
+            hourly_productions (hour, output, remarks)
+          `);
 
-      if (error) {
-        console.error('Supabase fetch error:', error.message);
-      } else if (isMounted.current) {
-        setData(workOrders || []);
+        console.log('Fetched workOrders:', workOrders);
+        console.log('Fetch error:', error);
+
+        if (error) {
+          console.error('Supabase fetch error:', error.message);
+        } else if (isMounted.current) {
+          setData(workOrders || []);
+        }
+      } catch (err) {
+        console.error('Unexpected fetch error:', err);
       }
-    } catch (err) {
-      console.error('Unexpected fetch error:', err);
-    }
+    }, 300); // 300ms debounce
   }, [supabase]);
 
-  // Effect 1: Initial data fetch – runs once when component mounts
   useEffect(() => {
-    fetchData();
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-  }, [fetchData]); // only depends on the stable fetchData function
-
-  // Effect 2: Real-time subscription – only handles incoming changes
-  useEffect(() => {
-    isMounted.current = true;
+    fetchData(); // initial
 
     const channel = supabase
       .channel('db-changes')
@@ -46,16 +45,14 @@ function SupervisorDashboard({ supabase }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'hourly_productions' },
         () => {
-          // Callback – safe place to call setState indirectly via fetchData
-          if (isMounted.current) {
-            fetchData();
-          }
+          if (isMounted.current) fetchData();
         }
       )
       .subscribe();
 
     return () => {
       isMounted.current = false;
+      if (fetchTimeout.current) clearTimeout(fetchTimeout.current);
       supabase.removeChannel(channel);
     };
   }, [fetchData, supabase]);
@@ -82,12 +79,8 @@ function SupervisorDashboard({ supabase }) {
           ) : (
             data.map((wo) => (
               <tr key={wo.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                  {wo.order_number}
-                </td>
-                <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                  {wo.line_id}
-                </td>
+                <td style={{ padding: '12px', border: '1px solid #ddd' }}>{wo.order_number}</td>
+                <td style={{ padding: '12px', border: '1px solid #ddd' }}>{wo.line_id}</td>
                 <td style={{ padding: '12px', border: '1px solid #ddd' }}>
                   {wo.hourly_productions?.length > 0 ? (
                     wo.hourly_productions
